@@ -1,634 +1,900 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workshop III — Technological Innovations in Marketing Research</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>BIP Portalegre — Mapa de Transportes Urbanos</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
     <style>
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
-            --bg: #09090b;
-            --text: #fafafa;
-            --text-muted: rgba(250, 250, 250, 0.45);
-            --text-subtle: rgba(250, 250, 250, 0.18);
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.15);
+            --c13: #e74c3c;
+            --c2: #2ecc71;
+            --c2a: #f39c12;
+            --c4: #9b59b6;
+            --c12: #3498db;
+            --azul: #1abc9c;
+            --sidebar-w: 370px;
+            --header-h: 54px;
         }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background:#f0f2f5; color:#222; }
 
-        html {
-            font-size: 18px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow: hidden;
+        /* ── Header ── */
+        header {
+            height: var(--header-h);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: .3px;
+            z-index: 1100;
             position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,.25);
         }
+        header .logo { margin-right: 12px; font-size: 1.5rem; }
+        header .subtitle { font-weight: 400; font-size: .85rem; opacity: .75; margin-left: 10px; }
 
-        /* ——— Ambient background orbs ——— */
-        .ambient {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            overflow: hidden;
-            pointer-events: none;
-        }
+        /* ── Layout ── */
+        #app { display: flex; height: calc(100vh - var(--header-h)); }
 
-        .ambient::before {
-            content: '';
-            position: absolute;
-            width: 900px;
-            height: 900px;
-            top: -250px;
-            right: -200px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
-            animation: drift 20s ease-in-out infinite;
-        }
-
-        .ambient::after {
-            content: '';
-            position: absolute;
-            width: 700px;
-            height: 700px;
-            bottom: -150px;
-            left: -200px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
-            animation: drift 25s ease-in-out infinite reverse;
-        }
-
-        @keyframes drift {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(40px, -30px) scale(1.08); }
-            66% { transform: translate(-30px, 20px) scale(0.95); }
-        }
-
-        /* ——— Grid pattern ——— */
-        .grid-pattern {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            background-image:
-                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-            background-size: 80px 80px;
-            mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 100%);
-            -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 100%);
-            pointer-events: none;
-        }
-
-        /* ——— Noise texture ——— */
-        .noise {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            opacity: 0.035;
-            pointer-events: none;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            background-repeat: repeat;
-            background-size: 256px 256px;
-        }
-
-        /* ——— Main layout ——— */
-        .page {
-            position: relative;
-            z-index: 2;
-            min-height: 100vh;
+        /* ── Sidebar ── */
+        #sidebar {
+            width: var(--sidebar-w);
+            min-width: var(--sidebar-w);
+            background: #fff;
+            overflow-y: auto;
+            border-right: 1px solid #ddd;
+            z-index: 1000;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 3rem 3rem;
         }
+        .sidebar-section { padding: 16px 18px; border-bottom: 1px solid #eee; }
+        .sidebar-section h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .8px; color: #888; margin-bottom: 10px; }
 
-        .content {
-            max-width: 1100px;
+        /* Route toggles */
+        .route-btn {
+            display: flex;
+            align-items: center;
             width: 100%;
-            text-align: center;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: #f7f8fa;
+            cursor: pointer;
+            font-size: .92rem;
+            font-weight: 500;
+            transition: all .15s;
         }
-
-        /* ——— Top label ——— */
-        .top-line {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.85rem;
-            margin-bottom: 2.5rem;
-            opacity: 0;
-            animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
+        .route-btn:hover { background: #eef1f5; }
+        .route-btn.active { border-color: currentColor; background: #fff; }
+        .route-btn .dot {
+            width: 14px; height: 14px;
             border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 16px rgba(59,130,246,0.5);
-            animation: pulseDot 2.5s ease-in-out infinite;
-        }
-
-        @keyframes pulseDot {
-            0%, 100% { opacity: 1; box-shadow: 0 0 16px rgba(59, 130, 246, 0.5); transform: scale(1); }
-            50% { opacity: 0.6; box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); transform: scale(1.2); }
-        }
-
-        .programme-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-        }
-
-        /* ——— BIP Title ——— */
-        .bip-title {
-            font-size: clamp(1.1rem, 2.2vw, 1.4rem);
-            font-weight: 300;
-            letter-spacing: 0.06em;
-            color: rgba(255,255,255,0.35);
-            margin-bottom: 0.8rem;
-            opacity: 0;
-            animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
-        }
-
-        /* ——— Workshop number ——— */
-        .workshop-num {
-            font-size: clamp(0.9rem, 1.5vw, 1.1rem);
-            font-weight: 700;
-            letter-spacing: 0.35em;
-            text-transform: uppercase;
-            color: var(--accent);
-            margin-bottom: 1.5rem;
-            opacity: 0;
-            text-shadow: 0 0 30px rgba(59,130,246,0.4);
-            animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
-        }
-
-        /* ——— Title (typewriter container) ——— */
-        .title {
-            font-size: clamp(3.5rem, 8vw, 6.5rem);
-            font-weight: 900;
-            line-height: 1.05;
-            letter-spacing: -0.035em;
-            margin-bottom: 2.2rem;
-            min-height: 3.2em;
-        }
-
-        .title .line {
-            display: block;
-        }
-
-        .title .highlight {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #06b6d4);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 6s ease-in-out infinite;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        /* ——— Code cursor ——— */
-        #typewriter-cursor {
-            display: inline-block;
-            margin-left: 0.12em;
-            font-weight: 400;
-            font-size: 0.6em;
-            color: var(--accent);
-            vertical-align: middle;
-            text-shadow: 0 0 18px var(--accent), 0 0 50px rgba(59,130,246,0.3);
-            min-width: 0.6em;
-            text-align: center;
-        }
-
-        /* ——— Divider ——— */
-        .divider-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1.2rem;
-            margin-bottom: 2.2rem;
-            opacity: 0;
-        }
-
-        .divider-line {
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
-            box-shadow: 0 0 12px rgba(59,130,246,0.3);
-        }
-
-        .divider-diamond {
-            width: 7px;
-            height: 7px;
-            background: var(--accent);
-            transform: rotate(45deg);
+            margin-right: 10px;
             flex-shrink: 0;
-            opacity: 0;
-            box-shadow: 0 0 12px rgba(59,130,246,0.5);
         }
-
-        /* ——— Subtitle ——— */
-        .subtitle {
-            font-size: clamp(1.1rem, 2.2vw, 1.4rem);
-            font-weight: 300;
-            line-height: 1.7;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin: 0 auto 3.5rem;
-            opacity: 0;
+        .route-btn .toggle {
+            margin-left: auto;
+            font-size: .75rem;
+            opacity: .5;
         }
+        .route-btn.active .toggle { opacity: 1; }
 
-        /* ——— Details row ——— */
-        .details {
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            gap: 3.5rem;
-            opacity: 0;
-        }
-
-        .detail {
-            text-align: center;
-        }
-
-        .detail-label {
-            font-size: 0.65rem;
+        /* Stop info panel */
+        #stop-info { display: none; }
+        #stop-info.visible { display: block; }
+        #stop-info .stop-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+        #stop-info .stop-routes { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        #stop-info .stop-route-tag {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .78rem;
             font-weight: 600;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--text-subtle);
-            margin-bottom: 0.6rem;
+            color: #fff;
         }
 
-        .detail-value {
-            font-size: 1rem;
-            font-weight: 400;
-            color: var(--text-muted);
-            line-height: 1.6;
+        /* Photos */
+        .photos-area { margin-top: 12px; }
+        .photos-area h4 { font-size: .82rem; color: #666; margin-bottom: 8px; }
+        .photos-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .photos-grid img {
+            width: 80px; height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid #eee;
+            transition: border-color .15s;
         }
-
-        .detail-value strong {
-            color: rgba(250, 250, 250, 0.75);
-            font-weight: 600;
-        }
-
-        .detail-separator {
-            width: 1px;
-            height: 48px;
-            background: var(--text-subtle);
-            align-self: center;
-        }
-
-        /* ——— Footer ——— */
-        .footer {
-            position: absolute;
-            bottom: 2.5rem;
-            left: 0;
-            right: 0;
-            text-align: center;
-            opacity: 0;
-        }
-
-        .erasmus-badge {
+        .photos-grid img:hover { border-color: #3498db; }
+        .photo-upload-btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.2rem;
-            padding: 0.6rem 1.8rem;
-            border: 1px solid rgba(59,130,246,0.2);
-            border-radius: 100px;
-            font-size: 0.85rem;
+            gap: 6px;
+            padding: 8px 14px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: .82rem;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .photo-upload-btn:hover { background: #2980b9; }
+        .photo-delete-btn {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: .72rem;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+
+        /* Timetable */
+        #timetable-section { display: none; flex: 1; overflow-y: auto; }
+        #timetable-section.visible { display: block; }
+        .tt-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .tt-header h3 { margin: 0; font-size: .95rem; color: #333; }
+        .tt-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+        .tt-tab {
+            padding: 6px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f7f8fa;
+            cursor: pointer;
+            font-size: .8rem;
             font-weight: 500;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
-            background: rgba(59,130,246,0.05);
         }
-
-        .erasmus-badge .plus {
-            color: var(--accent);
-            font-weight: 800;
-            font-size: 1rem;
-            text-shadow: 0 0 12px rgba(59,130,246,0.5);
+        .tt-tab.active { background: #16213e; color: #fff; border-color: #16213e; }
+        .tt-table-wrap { overflow-x: auto; margin-bottom: 12px; }
+        .tt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .78rem;
         }
-
-        /* ——— Animations ——— */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to { opacity: 1; transform: translateY(0); }
+        .tt-table th {
+            background: #f0f2f5;
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .tt-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #f0f2f5;
+            white-space: nowrap;
         }
+        .tt-table tr:hover td { background: #f7f8fa; }
+        .tt-note { font-size: .78rem; color: #888; font-style: italic; margin-top: 6px; }
 
-        .anim-fadeUp {
-            animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        /* ── Map ── */
+        #map { flex: 1; z-index: 1; }
 
-        .anim-expandLine {
-            animation: expandLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes expandLine {
-            to { width: 80px; }
-        }
-
-        /* ——— Floating particles ——— */
-        .particles {
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none;
             position: fixed;
             inset: 0;
-            z-index: 0;
-            pointer-events: none;
+            background: rgba(0,0,0,.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
         }
-
-        .particle {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: rgba(59, 130, 246, 0.35);
-            border-radius: 50%;
-            box-shadow: 0 0 6px rgba(59,130,246,0.25);
-            animation: floatUp linear infinite;
-        }
-
-        .particle:nth-child(1)  { left: 5%;  animation-duration: 14s; animation-delay: 0s; }
-        .particle:nth-child(2)  { left: 15%; animation-duration: 18s; animation-delay: 2s; }
-        .particle:nth-child(3)  { left: 25%; animation-duration: 12s; animation-delay: 5s; }
-        .particle:nth-child(4)  { left: 38%; animation-duration: 16s; animation-delay: 1s; }
-        .particle:nth-child(5)  { left: 50%; animation-duration: 20s; animation-delay: 4s; }
-        .particle:nth-child(6)  { left: 62%; animation-duration: 13s; animation-delay: 7s; }
-        .particle:nth-child(7)  { left: 75%; animation-duration: 17s; animation-delay: 3s; }
-        .particle:nth-child(8)  { left: 85%; animation-duration: 15s; animation-delay: 6s; }
-        .particle:nth-child(9)  { left: 92%; animation-duration: 19s; animation-delay: 1.5s; }
-        .particle:nth-child(10) { left: 48%; animation-duration: 22s; animation-delay: 8s; }
-
-        @keyframes floatUp {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            10% { opacity: 1; transform: translateY(90vh) scale(1); }
-            90% { opacity: 0.8; }
-            100% { transform: translateY(-50px) scale(0.5); opacity: 0; }
-        }
-
-        /* ——— Horizontal scroll text ——— */
-        .scroll-text {
-            position: fixed;
-            bottom: 5.5rem;
-            left: 0;
-            width: 100%;
-            z-index: 1;
+        .modal-overlay.visible { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 90vw;
+            max-height: 90vh;
             overflow: hidden;
-            pointer-events: none;
-            opacity: 0;
-            animation: fadeIn 2.5s ease 2.5s forwards;
+            box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        }
+        .modal-box img {
+            max-width: 90vw;
+            max-height: 85vh;
+            display: block;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(0,0,0,.6);
+            color: #fff;
+            border: none;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
         }
 
-        .scroll-text-inner {
-            display: flex;
-            white-space: nowrap;
-            animation: scrollText 50s linear infinite;
-            font-size: 0.7rem;
+        /* ── Mobile sidebar toggle ── */
+        #sidebar-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1200;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: #16213e;
+            color: #fff;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,.3);
+        }
+
+        /* ── Leaflet popup ── */
+        .leaflet-popup-content-wrapper { border-radius: 10px; }
+        .leaflet-popup-content { margin: 12px 16px; font-size: .88rem; }
+        .popup-title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+        .popup-routes { margin: 6px 0; }
+        .popup-route-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: .72rem;
             font-weight: 600;
-            letter-spacing: 0.35em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.035);
+            color: #fff;
+            margin: 2px 2px;
         }
-
-        .scroll-text-inner span {
-            padding: 0 3.5rem;
+        .popup-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 12px;
+            background: #3498db;
+            color: #fff;
+            border-radius: 5px;
+            font-size: .78rem;
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
         }
+        .popup-btn:hover { background: #2980b9; }
 
-        @keyframes scrollText {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
+        /* ── Legend ── */
+        .legend {
+            background: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            font-size: .78rem;
+            line-height: 1.7;
         }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 
-        /* ——— Responsive ——— */
-        @media (max-width: 600px) {
-            html { font-size: 16px; }
-            .details { flex-direction: column; gap: 1.5rem; }
-            .detail-separator { width: 30px; height: 1px; align-self: center; }
-            .page { padding: 2rem 1.5rem; }
-            .top-line { margin-bottom: 2rem; }
-            .subtitle { margin-bottom: 2.5rem; }
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                left: -100%;
+                top: var(--header-h);
+                width: 85vw;
+                max-width: 360px;
+                height: calc(100vh - var(--header-h));
+                transition: left .3s;
+                z-index: 1100;
+                box-shadow: 4px 0 20px rgba(0,0,0,.2);
+            }
+            #sidebar.open { left: 0; }
+            #sidebar-toggle { display: block; }
+            #map { width: 100vw; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Background layers -->
-    <div class="ambient"></div>
-    <div class="grid-pattern"></div>
-    <div class="noise"></div>
+<header>
+    <span class="logo">&#128652;</span>
+    BIP Portalegre
+    <span class="subtitle">Transportes Urbanos — Mapa Interativo</span>
+</header>
 
-    <!-- Floating particles -->
-    <div class="particles">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
-
-    <!-- Ambient scroll text -->
-    <div class="scroll-text">
-        <div class="scroll-text-inner">
-            <span>Innovation</span><span>Marketing</span><span>Research</span><span>Technology</span><span>Digital</span><span>Data</span><span>Strategy</span><span>AI</span><span>Analytics</span><span>Future</span>
-            <span>Innovation</span><span>Marketing</span><span>Research</span><span>Technology</span><span>Digital</span><span>Data</span><span>Strategy</span><span>AI</span><span>Analytics</span><span>Future</span>
-        </div>
-    </div>
-
-    <!-- Main content -->
-    <div class="page">
-        <div class="content">
-
-            <div class="top-line">
-                <div class="dot"></div>
-                <span class="programme-label">Blended Intensive Programme</span>
-            </div>
-
-            <p class="workshop-num">Workshop III</p>
-
-            <h1 class="title" id="title">
-                <span id="typewriter-cursor"></span>
-            </h1>
-
-            <div class="divider-wrapper" id="divider">
-                <div class="divider-line" id="divider-left"></div>
-                <div class="divider-diamond" id="divider-diamond"></div>
-                <div class="divider-line" id="divider-right"></div>
-            </div>
-
-            <p class="subtitle" id="subtitle">
-                Exploring the intersection of emerging technologies and modern marketing research methodologies.
-            </p>
-
-            <div class="details" id="details">
-                <div class="detail">
-                    <p class="detail-label">Led by</p>
-                    <p class="detail-value"><strong>Prof. Andr&eacute; Ant&atilde;o</strong></p>
-                </div>
-            </div>
-
+<div id="app">
+    <aside id="sidebar">
+        <!-- Routes -->
+        <div class="sidebar-section">
+            <h3>Carreiras</h3>
+            <button class="route-btn" data-route="C13" style="color:var(--c13)" onclick="toggleRoute('C13')">
+                <span class="dot" style="background:var(--c13)"></span> Carreira 13
+                <span class="toggle">&#10003;</span>
+            </button>
+            <button class="route-btn" data-route="C2" style="color:var(--c2)" onclick="toggleRoute('C2')">
+                <span class="dot" style="background:var(--c2)"></span> Carreira 2
+                <span class="toggle">&#10003;</span>
+            </button>
+            <button class="route-btn" data-route="C2A" style="color:var(--c2a)" onclick="toggleRoute('C2A')">
+                <span class="dot" style="background:var(--c2a)"></span> Carreira 2A
+                <span class="toggle">&#10003;</span>
+            </button>
+            <button class="route-btn" data-route="C4" style="color:var(--c4)" onclick="toggleRoute('C4')">
+                <span class="dot" style="background:var(--c4)"></span> Carreira 4
+                <span class="toggle">&#10003;</span>
+            </button>
+            <button class="route-btn" data-route="C12" style="color:var(--c12)" onclick="toggleRoute('C12')">
+                <span class="dot" style="background:var(--c12)"></span> Carreira 12
+                <span class="toggle">&#10003;</span>
+            </button>
+            <button class="route-btn" data-route="LA" style="color:var(--azul)" onclick="toggleRoute('LA')">
+                <span class="dot" style="background:var(--azul)"></span> Linha Azul
+                <span class="toggle">&#10003;</span>
+            </button>
         </div>
 
-        <div class="footer" id="footer">
-            <div class="erasmus-badge">
-                Erasmus<span class="plus">+</span> Programme
+        <!-- Stop info -->
+        <div class="sidebar-section" id="stop-info">
+            <h3>Paragem Selecionada</h3>
+            <div class="stop-name" id="si-name"></div>
+            <div class="stop-routes" id="si-routes"></div>
+            <div class="photos-area">
+                <h4>Fotografias</h4>
+                <div class="photos-grid" id="si-photos"></div>
+                <input type="file" id="photo-input" accept="image/*" style="display:none" multiple />
+                <button class="photo-upload-btn" onclick="document.getElementById('photo-input').click()">
+                    &#128247; Adicionar Foto
+                </button>
             </div>
         </div>
+
+        <!-- Timetable -->
+        <div class="sidebar-section" id="timetable-section">
+            <div class="tt-header">
+                <h3 id="tt-title">Horário</h3>
+            </div>
+            <div class="tt-tabs">
+                <button class="tt-tab active" onclick="showSchedule('weekday')">Dias Úteis</button>
+                <button class="tt-tab" onclick="showSchedule('weekend')">Fim-de-Semana</button>
+            </div>
+            <div id="tt-content"></div>
+        </div>
+    </aside>
+
+    <div id="map"></div>
+</div>
+
+<button id="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+
+<!-- Photo lightbox -->
+<div class="modal-overlay" id="lightbox">
+    <button class="modal-close" onclick="closeLightbox()">&times;</button>
+    <div class="modal-box">
+        <img id="lightbox-img" src="" alt="Foto da paragem" />
     </div>
+</div>
 
-    <script>
-    (function () {
-        // ——— Code symbols that rotate in the cursor ———
-        const codeSymbols = [
-            '&lt;/&gt;', '{;}', '( )', '[ ]', '=&gt;', '&&', '||',
-            '/**/', '#!/', '0x', '++', '!=', '&lt;?&gt;', '::',
-            '%s', '??', '>>',  './','#!', '~$', '^_'
-        ];
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script>
+// ════════════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════════════
 
-        const cursor = document.getElementById('typewriter-cursor');
-        let symbolIndex = 0;
-        let symbolInterval;
+const ROUTE_COLORS = {
+    C13: '#e74c3c', C2: '#2ecc71', C2A: '#f39c12',
+    C4: '#9b59b6', C12: '#3498db', LA: '#1abc9c'
+};
+const ROUTE_NAMES = {
+    C13: 'Carreira 13', C2: 'Carreira 2', C2A: 'Carreira 2A',
+    C4: 'Carreira 4', C12: 'Carreira 12', LA: 'Linha Azul'
+};
 
-        function startSymbolCycle() {
-            cursor.innerHTML = codeSymbols[0];
-            symbolInterval = setInterval(() => {
-                symbolIndex = (symbolIndex + 1) % codeSymbols.length;
-                cursor.style.opacity = '0';
-                setTimeout(() => {
-                    cursor.innerHTML = codeSymbols[symbolIndex];
-                    cursor.style.opacity = '1';
-                }, 80);
-            }, 400);
+const STOPS = [
+    { id:'atalaia', name:'Atalaião', lat:39.2923, lng:-7.4216, routes:['C13','C2','C2A'] },
+    { id:'tenro',   name:'Tenro',    lat:39.2910, lng:-7.4238, routes:['C13','C2','C2A'] },
+    { id:'louzel',  name:'Louzel',   lat:39.2898, lng:-7.4258, routes:['C13','C2','C2A'] },
+    { id:'nero',    name:'Nero',     lat:39.2900, lng:-7.4278, routes:['C13','C2','C2A','LA'] },
+    { id:'r1maio',  name:'R. 1.º de Maio', lat:39.2933, lng:-7.4322, routes:['C13','C2','C2A','LA'] },
+    { id:'semeador',name:'Semeador', lat:39.2917, lng:-7.4312, routes:['C13','C2','C2A','C4','C12','LA'] },
+    { id:'praca',   name:'P. da República', lat:39.2895, lng:-7.4297, routes:['C13','C2','C2A','C4','C12'] },
+    { id:'elvas',   name:'Rua de Elvas', lat:39.2907, lng:-7.4330, routes:['C13','C2','C2A','LA'] },
+    { id:'alecrins',name:'Alecrins', lat:39.2885, lng:-7.4308, routes:['C13','C2','C2A','C4'] },
+    { id:'rossio',  name:'Rossio',   lat:39.2956, lng:-7.4303, routes:['C13','C2','C2A','C12','LA'] },
+    { id:'expsanto',name:'Exp. Sto. António', lat:39.3000, lng:-7.4272, routes:['C13','C2','C2A'] },
+    { id:'hospital',name:'Hospital', lat:39.3008, lng:-7.4283, routes:['LA'] },
+    { id:'herculano',name:'Av. Alexandre Herculano', lat:39.2978, lng:-7.4315, routes:['LA'] },
+    { id:'liberdade',name:'Av. da Liberdade', lat:39.2968, lng:-7.4295, routes:['LA'] },
+    { id:'quelhas', name:'Quelhas',  lat:39.2948, lng:-7.4312, routes:['LA'] },
+    { id:'serpa',   name:'Lg. Serpa Pinto', lat:39.2918, lng:-7.4320, routes:['LA'] },
+    { id:'liboriental',name:'Av. Liberdade Oriental', lat:39.2972, lng:-7.4280, routes:['LA'] },
+    { id:'gare',    name:'Campo da Feira / Gare', lat:39.2975, lng:-7.4330, routes:['C2'] },
+    { id:'olarias', name:'Z. Tecnológica / Olarias', lat:39.2875, lng:-7.4322, routes:['C2'] },
+    { id:'campusipp',name:'Campus IPP', lat:39.2687, lng:-7.4427, routes:['C4','C12'] },
+    { id:'zindustrial',name:'Zona Industrial', lat:39.2655, lng:-7.4317, routes:['C12'] },
+    { id:'badajoz', name:'Av. de Badajoz', lat:39.2840, lng:-7.4340, routes:['C2','C12'] }
+];
+
+// Route stop sequences (for polylines)
+const ROUTE_PATHS = {
+    C13: ['atalaia','tenro','louzel','nero','r1maio','semeador','praca','elvas','alecrins','semeador','rossio','expsanto','louzel','tenro','atalaia'],
+    C2:  ['atalaia','tenro','louzel','nero','r1maio','semeador','praca','elvas','alecrins','gare','olarias','badajoz','rossio','expsanto'],
+    C2A: ['atalaia','tenro','louzel','nero','r1maio','semeador','praca','elvas','alecrins','rossio','expsanto'],
+    C4:  ['rossio','praca','alecrins','semeador','badajoz','campusipp'],
+    C12: ['rossio','praca','semeador','badajoz','campusipp','zindustrial'],
+    LA:  ['hospital','expsanto','liboriental','liberdade','herculano','rossio','quelhas','r1maio','semeador','elvas','serpa','nero']
+};
+
+// Timetables
+const TIMETABLES = {
+    C13: {
+        weekday: {
+            direction: 'Atalaião → Centro → Atalaião (circular)',
+            stops: ['Atalaião','Tenro','Louzel','Nero','R. 1.º Maio','Semeador','P. República','Rua de Elvas','Alecrins','Semeador','Rossio','Exp. Sto. Ant.','Louzel','Tenro','Atalaião'],
+            trips: [
+                ['6:30','6:33','-','6:36','6:37','6:40','6:41','6:43','6:45','6:48','6:52','-','6:53','6:55','6:58'],
+                ['7:00','7:03','-','7:06','7:07','7:10','7:11','7:13','7:15','7:18','7:22','-','7:23','7:25','7:26'],
+                ['-','-','-','-','-','-','-','-','8:10','8:12','8:15','8:18','-','-','-'],
+                ['-','-','-','-','-','-','-','8:30','8:32','8:35','8:37','-','8:39','8:40','8:43'],
+                ['20:30','20:32','-','20:35','20:37','20:40','20:41','20:43','20:45','20:48','20:52','-','20:53','20:55','20:58']
+            ]
+        },
+        weekend: {
+            direction: 'Atalaião → Centro → Atalaião',
+            stops: ['Atalaião','Tenro','Louzel','Nero','R. 1.º Maio','Semeador','P. República','Rua de Elvas','Alecrins','Semeador','Rossio','Exp. Sto. Ant.','Louzel','Tenro'],
+            trips: [
+                ['7:15','7:20','7:21','7:23','7:25','7:26','7:30','7:31','7:35','7:40','7:42','7:44','7:45','7:48'],
+                ['8:30','8:35','8:36','8:38','8:40','8:41','8:45','8:46','-','8:50','8:54','8:56','8:57','9:00'],
+                ['9:30','9:35','9:36','9:40','9:42','9:43','9:47','9:50','-','9:53','9:55','9:58','10:00','10:03']
+            ]
         }
-
-        startSymbolCycle();
-
-        // ——— Typewriter config ———
-        const lines = [
-            { text: 'Technological', highlight: true },
-            { text: 'Innovations in', highlight: false },
-            { text: 'Marketing Research', highlight: false },
-        ];
-
-        const titleEl = document.getElementById('title');
-        const charDelay = 55;
-        const lineDelay = 200;
-        const startDelay = 1200;
-
-        let currentLine = 0;
-        let currentChar = 0;
-        let lineSpan = null;
-
-        function createLine() {
-            lineSpan = document.createElement('span');
-            lineSpan.className = 'line';
-            if (lines[currentLine].highlight) {
-                const inner = document.createElement('span');
-                inner.className = 'highlight';
-                lineSpan.appendChild(inner);
-            }
-            titleEl.insertBefore(lineSpan, cursor);
+    },
+    C2A: {
+        weekday: {
+            direction: 'Atalaião → Centro → Exp. Sto. António',
+            stops: ['Atalaião','Tenro','Louzel','Nero','R. 1.º Maio','Semeador','P. República','Rua de Elvas','Alecrins','Semeador','Rossio','Exp. Sto. Ant.','Tenro','Atalaião'],
+            trips: [
+                ['5:15','5:16','5:17','5:19','5:21','5:22','5:23','5:24','5:26','5:27','5:28','5:29','5:30','-'],
+                ['7:15','7:17','7:18','7:20','7:22','7:23','7:25','7:26','7:29','7:32','7:34','7:36','7:37','7:39'],
+                ['10:00','10:02','10:03','10:05','10:07','10:08','10:10','10:11','10:14','10:17','10:19','10:21','10:22','10:24'],
+                ['13:00','13:02','13:03','13:05','13:07','13:08','13:10','13:11','13:14','13:17','13:19','13:21','13:22','13:24'],
+                ['13:15','13:17','13:18','13:20','13:22','13:23','13:25','13:26','13:30','13:33','13:35','13:37','13:38','13:40'],
+                ['21:15','21:17','21:18','21:20','21:21','21:22','21:23','21:25','21:26','21:30','21:33','21:35','21:37','21:38']
+            ]
+        },
+        weekend: {
+            direction: 'Serviço reduzido',
+            stops: ['Atalaião','Tenro','Louzel','Nero','R. 1.º Maio','Semeador','P. República','Rua de Elvas','Alecrins','Rossio','Exp. Sto. Ant.'],
+            trips: [
+                ['7:15','7:20','7:21','7:23','7:25','7:26','7:30','7:31','7:35','7:42','7:48'],
+                ['8:30','8:35','8:36','8:38','8:40','8:41','8:45','8:46','-','8:54','9:00'],
+                ['9:30','9:35','9:36','9:40','9:42','9:43','9:47','9:50','-','9:55','10:03']
+            ]
         }
+    },
+    C2: {
+        weekday: {
+            direction: 'Atalaião → Centro → Exp. Sto. António',
+            stops: ['Atalaião','Tenro','Louzel','Nero','R. 1.º Maio','Semeador','P. República','Rua de Elvas','Alecrins','Gare','Olarias','Rossio','Exp. Sto. Ant.','Atalaião'],
+            trips: [
+                ['7:30','7:32','-','7:36','7:38','7:40','7:41','7:43','7:44','7:46','-','7:47','7:48','7:49'],
+                ['8:00','8:02','8:05','8:06','8:08','8:10','8:11','8:13','8:14','8:18','-','8:21','8:22','8:23'],
+                ['8:30','-','8:35','8:36','8:37','-','-','8:40','8:41','8:45','-','8:48','8:49','8:50'],
+                ['9:15','9:17','9:20','9:21','9:23','9:25','9:26','9:28','9:29','9:33','-','9:36','9:37','9:38'],
+                ['10:30','10:32','-','10:33','10:34','10:35','10:37','10:39','10:41','10:45','-','10:49','10:49','10:50'],
+                ['11:00','11:02','-','11:03','11:04','11:06','11:07','11:09','11:11','11:15','-','11:18','11:19','11:20'],
+                ['12:00','12:02','12:04','12:05','12:06','12:07','12:08','12:10','12:11','12:15','-','12:13','12:19','12:20'],
+                ['12:35','12:38','12:40','12:41','12:42','12:43','12:44','12:46','12:47','12:51','-','12:54','12:55','12:56'],
+                ['13:30','13:33','13:35','13:36','13:37','13:38','13:39','13:41','13:42','13:46','-','13:48','13:49','13:50'],
+                ['14:00','14:03','14:05','14:06','14:07','14:08','14:09','14:11','14:12','14:16','14:17','-','14:18','14:19'],
+                ['14:30','14:33','14:35','14:36','14:37','14:38','14:39','14:41','14:42','14:46','-','14:49','14:49','14:50'],
+                ['15:00','15:03','-','15:06','15:07','15:08','15:09','15:11','15:12','15:16','-','15:18','15:19','15:20'],
+                ['15:30','15:33','-','15:34','15:36','15:37','15:39','15:41','15:42','15:46','-','15:49','15:50','15:51'],
+                ['16:00','16:03','16:05','16:06','16:08','16:09','16:10','16:11','16:13','16:14','16:16','-','16:21','16:22'],
+                ['16:30','16:33','16:36','16:38','16:39','16:41','16:43','16:44','16:44','16:46','16:49','-','16:50','16:50'],
+                ['17:00','17:03','17:05','17:06','17:08','17:09','17:11','17:13','17:14','17:18','-','17:21','17:22','17:23'],
+                ['17:30','17:33','17:35','17:36','17:38','17:39','17:41','17:43','17:44','17:48','-','17:52','17:53','17:53'],
+                ['18:15','18:18','18:20','18:21','18:23','18:24','18:26','18:28','18:29','18:30','-','18:34','18:38','18:39'],
+                ['19:05','19:08','-','19:09','19:11','19:12','19:14','19:16','19:17','19:21','-','19:24','19:25','19:26'],
+                ['22:45','22:48','-','22:49','22:51','22:52','22:54','22:56','22:57','23:00','-','-','23:02','-']
+            ]
+        },
+        weekend: {
+            direction: 'Atalaião → Centro → Exp. Sto. António',
+            stops: ['Atalaião','Tenro','Louzel','Nero','R. 1.º Maio','Semeador','P. República','Rua de Elvas','Alecrins','Gare','Rossio','Atalaião'],
+            trips: [
+                ['9:00','9:02','9:03','9:04','9:06','9:07','9:08','9:09','9:12','9:14','9:15','9:16'],
+                ['10:15','10:17','10:18','10:19','10:21','10:22','10:25','10:24','10:27','10:29','10:30','10:31'],
+                ['12:30','12:32','12:33','12:34','12:36','12:37','12:38','12:39','12:42','12:44','12:45','12:46'],
+                ['13:15','13:17','13:18','13:19','13:21','13:22','13:23','13:24','13:27','13:29','13:30','13:31'],
+                ['14:00','14:02','14:03','14:04','14:06','14:07','14:08','14:09','14:12','14:14','14:15','14:16'],
+                ['14:55','14:57','14:58','14:59','15:01','15:02','15:03','15:04','15:07','15:09','15:10','15:11'],
+                ['17:30','17:32','17:33','17:34','17:35','17:36','17:37','17:38','17:41','17:43','17:44','17:45']
+            ],
+            note: 'a) Só vai ao Campus IPP nos sábados'
+        }
+    },
+    C4: {
+        weekday: {
+            direction: 'Rossio → Campus IPP',
+            stops: ['Rossio','P. República','Alecrins','Semeador','Av. Badajoz','Campus IPP'],
+            trips: [
+                ['8:00','8:05','8:07','8:10','8:13','8:25'],
+                ['9:05','9:07','9:10','9:13','9:17','9:25']
+            ]
+        },
+        weekend: {
+            direction: 'Sem serviço ao fim-de-semana',
+            stops: [],
+            trips: [],
+            note: 'Carreira 4 não opera ao fim-de-semana e feriados.'
+        }
+    },
+    C12: {
+        weekday: {
+            direction: 'Rossio → Campus IPP → Zona Industrial',
+            stops: ['Rossio','P. República','Semeador','Av. Badajoz','Campus IPP','Z. Industrial','Campus IPP','Av. Badajoz','Semeador','Rossio'],
+            trips: [
+                ['8:35','8:40','-','8:43','8:45','8:47','8:49','8:50','8:51','8:53'],
+                ['9:15','9:17','9:18','9:20','9:22','-','9:25','9:26','9:28','-'],
+                ['13:35','13:36','13:38','13:40','13:42','-','13:45','13:46','13:48','-']
+            ]
+        },
+        weekend: {
+            direction: 'Serviço reduzido',
+            stops: ['Atalaião','Tenro','Nero','R. 1.º Maio','P. República','Semeador','Av. Badajoz','Campus IPP','Av. Badajoz','Semeador','Rossio','Atalaião'],
+            trips: [
+                ['11:25','11:26','11:27','11:29','11:30','11:31','11:33','11:34','11:35','11:36','11:37','11:39'],
+                ['13:00','13:01','13:02','13:04','13:05','13:06','13:08','13:09','13:10','13:11','13:12','13:14'],
+                ['13:30','13:31','13:32','13:34','13:35','13:36','13:38','13:39','13:40','13:41','13:42','13:44'],
+                ['14:35','14:36','14:37','14:39','14:40','14:41','14:43','14:44','14:45','14:46','14:47','14:48'],
+                ['15:55','15:56','15:57','15:59','16:00','16:01','16:03','16:04','16:05','16:06','16:07','16:09'],
+                ['18:00','18:01','18:02','18:04','18:05','18:06','18:08','18:09','18:10','18:11','18:12','18:14'],
+                ['19:05','19:06','19:08','19:10','19:11','19:13','-','-','19:15','19:16','19:17','-']
+            ],
+            note: 'a) Só vai ao Campus IPP nos sábados'
+        }
+    },
+    LA: {
+        weekday: {
+            direction: 'Hospital → Centro → Hospital (circular)',
+            stops: ['Hospital','Nero','Av. A. Herculano','Av. Liberdade','Quelhas','R. 1.º Maio','Semeador','Rua de Elvas','Lg. Serpa Pinto','Rossio','Av. Lib. Oriental'],
+            trips: [
+                ['8:30','-','-','-','-','-','-','-','-','-','-'],
+                ['10:00','-','-','-','-','-','-','-','-','-','-'],
+                ['11:00','-','-','-','-','-','-','-','-','-','-'],
+                ['12:00','-','-','-','-','-','-','-','-','-','-'],
+                ['12:30','-','-','-','-','-','-','-','-','-','-'],
+                ['13:30','-','-','-','-','-','-','-','-','-','-'],
+                ['14:00','-','-','-','-','-','-','-','-','-','-'],
+                ['14:40','-','-','-','-','-','-','-','-','-','-'],
+                ['16:30','-','-','-','-','-','-','-','-','-','-'],
+                ['17:25','-','-','-','-','-','-','-','-','-','-']
+            ],
+            note: 'Saídas do Hospital. Percurso: Nero, Av. Alexandre Herculano, Av. Liberdade, Quelhas, Rua 1.º de Maio, Semeador, Rua de Elvas, Lg. Serpa Pinto, Rossio, Av. Liberdade Oriental.'
+        },
+        weekend: {
+            direction: 'Sem serviço ao fim-de-semana',
+            stops: [],
+            trips: [],
+            note: 'Linha Azul não opera ao fim-de-semana e feriados.'
+        }
+    }
+};
 
-        function typeChar() {
-            const line = lines[currentLine];
-            const char = line.text[currentChar];
+// ════════════════════════════════════════════════
+//  MAP SETUP
+// ════════════════════════════════════════════════
 
-            const target = line.highlight ? lineSpan.querySelector('.highlight') : lineSpan;
-            target.textContent += char;
+const map = L.map('map', { zoomControl: true }).setView([39.2920, -7.4300], 14);
 
-            currentChar++;
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
+}).addTo(map);
 
-            if (currentChar < line.text.length) {
-                setTimeout(typeChar, charDelay);
+// Custom circle marker icon
+function createIcon(color, size) {
+    return L.divIcon({
+        className: 'custom-marker',
+        html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            <circle cx="${size/2}" cy="${size/2}" r="${size/2-2}" fill="${color}" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+        </svg>`,
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2],
+        popupAnchor: [0, -size/2]
+    });
+}
+
+// ════════════════════════════════════════════════
+//  MARKERS & LAYERS
+// ════════════════════════════════════════════════
+
+const stopMap = {};
+STOPS.forEach(s => stopMap[s.id] = s);
+
+const markers = {};
+const routeLayers = {};
+const activeRoutes = new Set();
+let selectedStop = null;
+let currentSchedule = 'weekday';
+
+// Create markers
+STOPS.forEach(stop => {
+    const primaryRoute = stop.routes[0];
+    const color = ROUTE_COLORS[primaryRoute];
+    const marker = L.marker([stop.lat, stop.lng], { icon: createIcon(color, 22) });
+
+    const routeTags = stop.routes.map(r =>
+        `<span class="popup-route-tag" style="background:${ROUTE_COLORS[r]}">${ROUTE_NAMES[r]}</span>`
+    ).join('');
+
+    marker.bindPopup(`
+        <div class="popup-title">${stop.name}</div>
+        <div class="popup-routes">${routeTags}</div>
+        <button class="popup-btn" onclick="selectStop('${stop.id}')">Ver detalhes</button>
+    `);
+
+    marker.on('click', () => {
+        selectStop(stop.id);
+    });
+
+    markers[stop.id] = marker;
+    marker.addTo(map);
+});
+
+// Create route polylines
+Object.keys(ROUTE_PATHS).forEach(routeId => {
+    const path = ROUTE_PATHS[routeId];
+    const coords = path.map(sid => {
+        const s = stopMap[sid];
+        return s ? [s.lat, s.lng] : null;
+    }).filter(Boolean);
+
+    routeLayers[routeId] = L.polyline(coords, {
+        color: ROUTE_COLORS[routeId],
+        weight: 4,
+        opacity: 0.7,
+        dashArray: routeId === 'LA' ? '8, 8' : null
+    });
+});
+
+// Legend
+const legend = L.control({ position: 'bottomright' });
+legend.onAdd = function() {
+    const div = L.DomUtil.create('div', 'legend');
+    div.innerHTML = '<strong style="margin-bottom:4px;display:block">Carreiras</strong>' +
+        Object.keys(ROUTE_NAMES).map(r =>
+            `<div class="legend-item"><span class="legend-dot" style="background:${ROUTE_COLORS[r]}"></span>${ROUTE_NAMES[r]}</div>`
+        ).join('');
+    return div;
+};
+legend.addTo(map);
+
+// ════════════════════════════════════════════════
+//  ROUTE TOGGLE
+// ════════════════════════════════════════════════
+
+function toggleRoute(routeId) {
+    const btn = document.querySelector(`.route-btn[data-route="${routeId}"]`);
+    if (activeRoutes.has(routeId)) {
+        activeRoutes.delete(routeId);
+        btn.classList.remove('active');
+        if (routeLayers[routeId]) map.removeLayer(routeLayers[routeId]);
+        // Hide timetable if this was selected
+        document.getElementById('timetable-section').classList.remove('visible');
+    } else {
+        activeRoutes.add(routeId);
+        btn.classList.add('active');
+        if (routeLayers[routeId]) routeLayers[routeId].addTo(map);
+        showTimetable(routeId);
+    }
+    updateMarkerVisibility();
+}
+
+function updateMarkerVisibility() {
+    STOPS.forEach(stop => {
+        const marker = markers[stop.id];
+        if (activeRoutes.size === 0) {
+            marker.addTo(map);
+            marker.setIcon(createIcon(ROUTE_COLORS[stop.routes[0]], 22));
+        } else {
+            const matchingRoutes = stop.routes.filter(r => activeRoutes.has(r));
+            if (matchingRoutes.length > 0) {
+                marker.addTo(map);
+                marker.setIcon(createIcon(ROUTE_COLORS[matchingRoutes[0]], 26));
             } else {
-                currentLine++;
-                currentChar = 0;
-                if (currentLine < lines.length) {
-                    setTimeout(() => {
-                        createLine();
-                        setTimeout(typeChar, charDelay);
-                    }, lineDelay);
-                } else {
-                    onTypingDone();
-                }
+                marker.setIcon(createIcon('#bbb', 16));
             }
         }
+    });
+}
 
-        function onTypingDone() {
-            // Animate in the remaining elements with stagger
-            const divider = document.getElementById('divider');
-            const dividerLeft = document.getElementById('divider-left');
-            const dividerRight = document.getElementById('divider-right');
-            const diamond = document.getElementById('divider-diamond');
-            const subtitle = document.getElementById('subtitle');
-            const details = document.getElementById('details');
-            const footer = document.getElementById('footer');
+// ════════════════════════════════════════════════
+//  STOP SELECTION
+// ════════════════════════════════════════════════
 
-            setTimeout(() => {
-                divider.style.opacity = '1';
-                divider.style.animation = 'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards';
-            }, 200);
+function selectStop(stopId) {
+    selectedStop = stopId;
+    const stop = stopMap[stopId];
+    if (!stop) return;
 
-            setTimeout(() => {
-                dividerLeft.style.animation = 'expandLine 1.2s cubic-bezier(0.16,1,0.3,1) forwards';
-                dividerRight.style.animation = 'expandLine 1.2s cubic-bezier(0.16,1,0.3,1) forwards';
-            }, 500);
+    const panel = document.getElementById('stop-info');
+    panel.classList.add('visible');
+    document.getElementById('si-name').textContent = stop.name;
 
-            setTimeout(() => {
-                diamond.style.opacity = '1';
-                diamond.style.animation = 'fadeIn 0.4s ease forwards';
-            }, 800);
+    const routesHtml = stop.routes.map(r =>
+        `<span class="stop-route-tag" style="background:${ROUTE_COLORS[r]}">${ROUTE_NAMES[r]}</span>`
+    ).join('');
+    document.getElementById('si-routes').innerHTML = routesHtml;
 
-            setTimeout(() => {
-                subtitle.style.opacity = '1';
-                subtitle.style.animation = 'fadeUp 1s cubic-bezier(0.16,1,0.3,1) forwards';
-            }, 600);
+    loadPhotos(stopId);
 
-            setTimeout(() => {
-                details.style.opacity = '1';
-                details.style.animation = 'fadeUp 1s cubic-bezier(0.16,1,0.3,1) forwards';
-            }, 1000);
+    // Scroll sidebar to show stop info
+    panel.scrollIntoView({ behavior: 'smooth' });
 
-            setTimeout(() => {
-                footer.style.opacity = '1';
-                footer.style.animation = 'fadeUp 1s cubic-bezier(0.16,1,0.3,1) forwards';
-            }, 1400);
+    // Close mobile sidebar on selection
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+    }
+}
+
+// ════════════════════════════════════════════════
+//  PHOTO MANAGEMENT (localStorage)
+// ════════════════════════════════════════════════
+
+function getPhotos(stopId) {
+    try {
+        return JSON.parse(localStorage.getItem('bip_photos_' + stopId) || '[]');
+    } catch { return []; }
+}
+
+function savePhotos(stopId, photos) {
+    localStorage.setItem('bip_photos_' + stopId, JSON.stringify(photos));
+}
+
+function loadPhotos(stopId) {
+    const grid = document.getElementById('si-photos');
+    const photos = getPhotos(stopId);
+    if (photos.length === 0) {
+        grid.innerHTML = '<span style="color:#aaa;font-size:.8rem">Sem fotografias</span>';
+        return;
+    }
+    grid.innerHTML = photos.map((p, i) =>
+        `<div style="position:relative;display:inline-block">
+            <img src="${p}" onclick="openLightbox('${p.replace(/'/g, "\\'")}')" alt="Foto ${i+1}" />
+            <button class="photo-delete-btn" onclick="deletePhoto('${stopId}',${i})" title="Remover">&times;</button>
+        </div>`
+    ).join('');
+}
+
+function deletePhoto(stopId, index) {
+    const photos = getPhotos(stopId);
+    photos.splice(index, 1);
+    savePhotos(stopId, photos);
+    loadPhotos(stopId);
+}
+
+document.getElementById('photo-input').addEventListener('change', function(e) {
+    if (!selectedStop) return;
+    const files = Array.from(e.target.files);
+    const photos = getPhotos(selectedStop);
+
+    let loaded = 0;
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            // Resize image to save localStorage space
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX = 800;
+                let w = img.width, h = img.height;
+                if (w > MAX || h > MAX) {
+                    if (w > h) { h = h * MAX / w; w = MAX; }
+                    else { w = w * MAX / h; h = MAX; }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                photos.push(canvas.toDataURL('image/jpeg', 0.7));
+                loaded++;
+                if (loaded === files.length) {
+                    savePhotos(selectedStop, photos);
+                    loadPhotos(selectedStop);
+                }
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+});
+
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('visible');
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('visible');
+}
+
+document.getElementById('lightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeLightbox();
+});
+
+// ════════════════════════════════════════════════
+//  TIMETABLE
+// ════════════════════════════════════════════════
+
+let currentTimetableRoute = null;
+
+function showTimetable(routeId) {
+    currentTimetableRoute = routeId;
+    const section = document.getElementById('timetable-section');
+    section.classList.add('visible');
+    document.getElementById('tt-title').textContent = 'Horário — ' + ROUTE_NAMES[routeId];
+    renderTimetable(routeId, currentSchedule);
+}
+
+function showSchedule(type) {
+    currentSchedule = type;
+    document.querySelectorAll('.tt-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tt-tab:${type === 'weekday' ? 'first-child' : 'last-child'}`).classList.add('active');
+    if (currentTimetableRoute) renderTimetable(currentTimetableRoute, type);
+}
+
+function renderTimetable(routeId, schedule) {
+    const data = TIMETABLES[routeId]?.[schedule];
+    const container = document.getElementById('tt-content');
+
+    if (!data || data.stops.length === 0) {
+        container.innerHTML = `<p class="tt-note">${data?.note || 'Sem informação disponível.'}</p>`;
+        return;
+    }
+
+    let html = `<p style="font-size:.82rem;color:#555;margin-bottom:8px">${data.direction}</p>`;
+    html += '<div class="tt-table-wrap"><table class="tt-table"><thead><tr>';
+    data.stops.forEach(s => html += `<th>${s}</th>`);
+    html += '</tr></thead><tbody>';
+    data.trips.forEach(trip => {
+        html += '<tr>';
+        trip.forEach(t => html += `<td>${t}</td>`);
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    if (data.note) {
+        html += `<p class="tt-note">${data.note}</p>`;
+    }
+
+    html += `<p class="tt-note" style="margin-top:10px">Horários válidos a partir de 5 de janeiro de 2026.<br>
+    SMAT Portalegre — Tel: 245 307 401</p>`;
+
+    container.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════
+//  KEYBOARD / GLOBAL
+// ════════════════════════════════════════════════
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeLightbox();
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('open');
         }
+    }
+});
 
-        // Start
-        setTimeout(() => {
-            createLine();
-            typeChar();
-        }, startDelay);
-    })();
-    </script>
-
+// Fit map to show all stops
+const bounds = L.latLngBounds(STOPS.map(s => [s.lat, s.lng]));
+map.fitBounds(bounds.pad(0.1));
+</script>
 </body>
 </html>
